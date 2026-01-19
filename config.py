@@ -1,8 +1,8 @@
 '''
 Hardware configuration.
 '''
-
-MATSIZE = 16
+# used to be 16
+MATSIZE = 8
 
 HOST_ADDR_SIZE = 64
 UB_ADDR_SIZE = 12
