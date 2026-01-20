@@ -22,7 +22,7 @@ ENV/
 .DS_Store
 
 # Generated Verilog files
-*.v
+#*.v
 
 # Generated binary/object files
 *.out
