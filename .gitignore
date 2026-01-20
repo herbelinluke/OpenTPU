@@ -22,7 +22,7 @@ ENV/
 .DS_Store
 
 # Generated Verilog files
-#*.v
+*.v
 
 # Generated binary/object files
 *.out
@@ -43,10 +43,6 @@ sim*.npy
 # Simulation traces
 *.vcd
 trace.vcd
-
-# Test files (temporary)
-test_export.v
-test_io_names.py
 
 # Debug logs
 .cursor/debug.log

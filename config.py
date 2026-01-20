@@ -1,7 +1,7 @@
 '''
 Hardware configuration.
 '''
-# used to be 16
+
 MATSIZE = 8
 
 HOST_ADDR_SIZE = 64
