@@ -1,0 +1,73 @@
+# Makefile for building Verilator test harness
+# Usage: make -f Makefile.verilator
+
+VERILATOR_ROOT ?= /usr/share/verilator
+OBJ_DIR = obj_dir
+TEST_HARNESS = test_tpu
+VERILATOR_LIB = $(OBJ_DIR)/Vtpu__ALL.a
+
+# Compiler flags
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall -O2
+INCLUDES = -I$(OBJ_DIR) -I$(VERILATOR_ROOT)/include -I$(VERILATOR_ROOT)/include/vltstd
+LDFLAGS = -L$(VERILATOR_ROOT)/lib -lverilated -lverilated_vcd
+
+# Source files
+TEST_SRC = test_tpu.cpp
+TEST_OBJ = $(OBJ_DIR)/test_tpu.o
+
+.PHONY: all clean test
+
+all: $(OBJ_DIR)/$(TEST_HARNESS)
+
+# Build the test harness
+$(OBJ_DIR)/$(TEST_HARNESS): $(TEST_OBJ) $(VERILATOR_LIB)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ $^ $(LDFLAGS)
+
+# Compile test harness source
+$(TEST_OBJ): $(TEST_SRC) | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Ensure obj_dir exists
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+# Check if Verilator library exists
+$(VERILATOR_LIB):
+	@echo "Error: Verilator library not found. Run Verilator first:"
+	@echo "  verilator --cc --exe --build tpu.v"
+	@exit 1
+
+clean:
+	rm -f $(OBJ_DIR)/$(TEST_HARNESS) $(TEST_OBJ)
+
+# Test targets (require converted memory files)
+test-simplemult: $(OBJ_DIR)/$(TEST_HARNESS)
+	@if [ ! -f simplemult_hostmem.bin ] || [ ! -f simplemult_weights.bin ]; then \
+		echo "Converting memory files..."; \
+		python3 convert_mem.py simplemult_hostmem.npy simplemult_hostmem.bin --format hostmem; \
+		python3 convert_mem.py simplemult_weights.npy simplemult_weights.bin --format weights; \
+	fi
+	cd $(OBJ_DIR) && ./$(TEST_HARNESS) ../simplemult.out ../simplemult_hostmem.bin ../simplemult_weights.bin --trace ../trace_verilator.vcd
+
+test-boston: $(OBJ_DIR)/$(TEST_HARNESS)
+	@if [ ! -f boston_input.bin ] || [ ! -f boston_weights.bin ]; then \
+		echo "Converting memory files..."; \
+		python3 convert_mem.py boston_input.npy boston_input.bin --format hostmem; \
+		python3 convert_mem.py boston_weights.npy boston_weights.bin --format weights --matsize 16; \
+	fi
+	cd $(OBJ_DIR) && ./$(TEST_HARNESS) ../boston.out ../boston_input.bin ../boston_weights.bin --trace ../trace_verilator.vcd
+
+help:
+	@echo "Verilator Test Harness Makefile"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all              - Build the test harness"
+	@echo "  test-simplemult  - Run simplemult test"
+	@echo "  test-boston      - Run boston test"
+	@echo "  clean            - Remove built files"
+	@echo ""
+	@echo "Prerequisites:"
+	@echo "  1. Run Verilator: verilator --cc --exe --build tpu.v"
+	@echo "  2. Convert memory files using convert_mem.py"
+
